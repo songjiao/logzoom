@@ -8,9 +8,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/packetzoom/logzoom/buffer"
-	"github.com/packetzoom/logzoom/output"
-	"github.com/packetzoom/logzoom/route"
+	"github.com/songjiao/logzoom/buffer"
+	"github.com/songjiao/logzoom/output"
+	"github.com/songjiao/logzoom/route"
 	"golang.org/x/net/websocket"
 
 	"gopkg.in/yaml.v2"

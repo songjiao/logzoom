@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/packetzoom/logzoom",
+	"ImportPath": "github.com/songjiao/logzoom",
 	"GoVersion": "go1.6",
 	"GodepVersion": "v60",
 	"Deps": [

@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/packetzoom/logzoom/input"
+	"github.com/songjiao/logzoom/input"
 )
 
 type Config struct {

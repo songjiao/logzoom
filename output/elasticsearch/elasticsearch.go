@@ -9,12 +9,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/packetzoom/logzoom/buffer"
-	"github.com/packetzoom/logzoom/output"
-	"github.com/packetzoom/logzoom/route"
-	"github.com/paulbellamy/ratecounter"
-	"gopkg.in/olivere/elastic.v2"
+	"gopkg.in/olivere/elastic.v3"
 	"gopkg.in/yaml.v2"
+	"github.com/paulbellamy/ratecounter"
+	"github.com/songjiao/logzoom/buffer"
+	"github.com/songjiao/logzoom/output"
+	"github.com/songjiao/logzoom/route"
 )
 
 const (
@@ -210,6 +210,8 @@ func (es *ESServer) Start() error {
 
 		log.Println("Setting HTTP timeout to", timeout)
 		log.Println("Setting GZIP enabled:", es.config.GzipEnabled)
+		log.Printf("es.config.hosts:[%s]",es.config.Hosts)
+		log.Printf("es.config.indexPrefix:%s",es.config.IndexPrefix)
 
 		httpClient.Timeout = timeout
 
@@ -226,6 +228,8 @@ func (es *ESServer) Start() error {
 		} else {
 			errorLogger = log.New(new(DevNull), "", log.LstdFlags)
 		}
+
+
 
 		client, err = elastic.NewClient(elastic.SetURL(es.hosts...),
 			elastic.SetHttpClient(httpClient),

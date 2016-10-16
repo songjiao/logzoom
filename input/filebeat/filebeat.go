@@ -1,7 +1,7 @@
 package filebeat
 
 import (
-	"github.com/packetzoom/logzoom/input"
+	"github.com/songjiao/logzoom/input"
 )
 
 func init() {
