@@ -18,12 +18,15 @@ import (
 )
 
 const (
-	defaultHost        = "127.0.0.1"
+	defaultHost = "127.0.0.1"
 	defaultIndexPrefix = "logstash"
-	esFlushInterval    = 5
-	esMaxConns         = 20
-	esRecvBuffer       = 100
-	esSendBuffer       = 100
+	esFlushInterval = 5
+	esMaxConns = 20
+)
+
+var (
+	esRecvBuffer = 100
+	esSendBuffer = 100
 )
 
 type Indexer struct {
@@ -42,6 +45,8 @@ type Config struct {
 	GzipEnabled     bool     `yaml:"gzip_enabled"`
 	InfoLogEnabled  bool     `yaml:"info_log_enabled"`
 	ErrorLogEnabled bool     `yaml:"error_log_enabled"`
+	ESRecvBuffer    int         `yaml:"es_resv_buffer"`
+	ESSendBuffer    int         `yaml:"es_send_buffer"`
 }
 
 type ESServer struct {
@@ -84,7 +89,7 @@ func (i *Indexer) flush() error {
 	numEvents := i.bulkService.NumberOfActions()
 
 	if numEvents > 0 {
-		if time.Now().Sub(i.lastDisplayUpdate) >= time.Duration(1*time.Second) {
+		if time.Now().Sub(i.lastDisplayUpdate) >= time.Duration(1 * time.Second) {
 			log.Printf("Flushing %d event(s) to Elasticsearch, current rate: %d/s", numEvents, i.RateCounter.Rate())
 			i.lastDisplayUpdate = time.Now()
 		}
@@ -130,6 +135,14 @@ func (e *ESServer) ValidateConfig(config *Config) error {
 
 	if len(config.IndexType) == 0 {
 		return errors.New("Missing index type (e.g. logstash)")
+	}
+
+	if config.ESRecvBuffer > 0 {
+		esRecvBuffer = config.ESRecvBuffer
+	}
+
+	if config.ESSendBuffer > 0 {
+		esSendBuffer = config.ESSendBuffer
 	}
 
 	return nil
@@ -210,8 +223,8 @@ func (es *ESServer) Start() error {
 
 		log.Println("Setting HTTP timeout to", timeout)
 		log.Println("Setting GZIP enabled:", es.config.GzipEnabled)
-		log.Printf("es.config.hosts:[%s]",es.config.Hosts)
-		log.Printf("es.config.indexPrefix:%s",es.config.IndexPrefix)
+		log.Printf("es.config.hosts:[%s]", es.config.Hosts)
+		log.Printf("es.config.indexPrefix:%s", es.config.IndexPrefix)
 
 		httpClient.Timeout = timeout
 
@@ -228,8 +241,6 @@ func (es *ESServer) Start() error {
 		} else {
 			errorLogger = log.New(new(DevNull), "", log.LstdFlags)
 		}
-
-
 
 		client, err = elastic.NewClient(elastic.SetURL(es.hosts...),
 			elastic.SetHttpClient(httpClient),

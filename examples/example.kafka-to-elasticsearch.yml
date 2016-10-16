@@ -18,6 +18,8 @@ outputs:
           - http://td-dz-rs33.yz:9201
         index: "songjiao-nginx-log-test"
         index_type: "nginxlog"
+        es_resv_buffer: 10000
+        es_send_buffer: 10000
         gzip_enabled: false
         info_log_enabled: true
         error_log_enabled: true

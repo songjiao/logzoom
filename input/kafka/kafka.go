@@ -19,9 +19,6 @@ import (
 	"encoding/json"
 )
 
-const (
-	recvBuffer = 100
-)
 
 var (
 	zookeeperNodes []string
