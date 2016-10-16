@@ -1,0 +1,28 @@
+---
+inputs:
+  - kafka_nginxlog:
+      kafka:
+        zookeeper: "h7.zw:2181,h8.zw:2181,h9.zw:2181"
+        topic: "nginx-log"
+        consumer_group: "NGINX_LOG_TO_ES_USE_GO"
+        separator_char: "\t"
+        fields: "endpoint:0,remote_addr:1,request_time:4,content_length:5,request:7,status:8,body_bytes_sent:9,http_referer:10,http_user_agent:11,host:12,http_x_forwarded_for:13,upstream_addr:14,http_accept_language:15,nginxtype:16,upstream_response_time:17,id:18,request_length:20,bytes_sent:21,scheme:22"
+        timestamp_index: 3
+        timestamp_format: "02/Jan/2006:15:04:05 -0700"
+outputs:
+  - es_nginxlog:
+      elasticsearch:
+        hosts:
+          - http://td-dz-rs31.yz:9201
+          - http://td-dz-rs32.yz:9201
+          - http://td-dz-rs33.yz:9201
+        index: "songjiao-nginx-log-test"
+        index_type: "nginxlog"
+        gzip_enabled: false
+        info_log_enabled: true
+        error_log_enabled: true
+
+routes:
+  - route1:
+      input: kafka_nginxlog
+      output: es_nginxlog
