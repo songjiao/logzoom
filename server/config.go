@@ -23,6 +23,5 @@ func LoadConfig(file string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse config %s: %v", file, err)
 	}
-
 	return conf, nil
 }

@@ -15,49 +15,17 @@ import (
 	"github.com/wvanbergen/kazoo-go"
 	"gopkg.in/Shopify/sarama.v1"
 	"github.com/songjiao/logzoom/buffer"
-	"strconv"
 	"encoding/json"
 )
-
 
 var (
 	zookeeperNodes []string
 )
 
-type NginxLog struct {
-	Hostname               string
-	Remote_addr            string
-	Remote_user            string
-	Time_local             string
-	Request_time           string
-	Content_length         string
-	Gzip_ratio             string
-	Request                string
-	Status                 string
-	Body_bytes_sent        string
-	Http_referer           string
-	Http_user_agent        string
-	Host                   string
-	Http_x_forwarded_for   string
-	Upstream_addr          string
-	Http_accept_language   string
-	Nginxtype              string
-	Upstream_response_time string
-	Kslogid                string
-	Msec                   string
-	Request_length         string
-	Bytes_sent             string
-	Scheme                 string
-}
-
 type Config struct {
-	Zookeeper       string `yaml:"zookeeper"`
-	Topic           string `yaml:"topic"`
-	ConsumerGroup   string `yaml:"consumer_group"`
-	SeparatorChar   string `yaml:"separator_char"`
-	Fields          string `yaml:"fields"`
-	TimestampIndex  string `yaml:"timestamp_index"` //第几个字段是时间
-	TimestampFormat string `yaml:"timestamp_format"`
+	Zookeeper     string `yaml:"zookeeper"`
+	Topic         string `yaml:"topic"`
+	ConsumerGroup string `yaml:"consumer_group"`
 }
 
 type KafkaInput struct {
@@ -114,7 +82,7 @@ func (kafkaServer *KafkaInput) Init(name string, config yaml.MapSlice, receiver 
 }
 
 func (kafkaServer *KafkaInput) Start() error {
-	log.Printf("Starting kafka consumer")
+	log.Printf("Starting kafkaV2 consumer")
 
 	config := consumergroup.NewConfig()
 	config.Offsets.Initial = sarama.OffsetNewest
@@ -160,35 +128,18 @@ func (kafkaServer *KafkaInput) Start() error {
 		line := string(message.Value)
 
 		var ev buffer.Event
-		fields := make(map[string]interface{})
-		data := strings.Split(line, kafkaServer.config.SeparatorChar)
-		//log.Print(data)
-		for _,column := range strings.Split(kafkaServer.config.Fields, ",") {
-			column_name := strings.Split(column, ":")[0]
-			column_index, err := strconv.Atoi(strings.Split(column, ":")[1])
-			if err != nil {
-				log.Printf(err.Error())
-				os.Exit(-1)
+		ev.Text = &line
+		var dat map[string]interface{}
+		if err := json.Unmarshal(message.Value, &dat); err == nil {
+			if val, ok := dat["id"]; ok {
+				ev.ID = val.(string)
 			}
-			if len(data)>column_index {
-				//log.Printf("%s %d %d",column_name,column_index,len(data))
-				fields[column_name] = data[column_index]
+			if val, ok := dat["type"]; ok {
+				ev.Type = val.(string)
 			}
 
 		}
 
-		//处理时间字段
-		t_index, err := strconv.Atoi(kafkaServer.config.TimestampIndex)
-		if err != nil {
-			log.Printf("timestamp_index must be a number")
-			os.Exit(-1)
-		}
-		tt, _ := time.Parse(kafkaServer.config.TimestampFormat, data[t_index])
-		fields["@timestamp"] = tt.Format(time.RFC3339Nano)
-		ev.Fields = &fields
-		json_text, err := json.Marshal(fields)
-		text := string(json_text)
-		ev.Text = &text
 		kafkaServer.receiver.Send(&ev)
 		offsets[message.Topic][message.Partition] = message.Offset
 		consumer.CommitUpto(message)

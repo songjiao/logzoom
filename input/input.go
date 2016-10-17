@@ -5,6 +5,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/songjiao/logzoom/buffer"
+	"log"
 )
 
 type Receiver interface {
@@ -22,6 +23,7 @@ var (
 )
 
 func Register(name string, constructor func()Input) error {
+	log.Printf("regiest input:%s",name)
 	if _, ok := inputs[name]; ok {
 		return fmt.Errorf("Input %s already exists", name)
 	}

@@ -34,7 +34,6 @@ func New(configFile string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &Server{
 		Config:  config,
 		buffers: make(map[string]*buffer.Buffer),

@@ -109,9 +109,16 @@ func (i *Indexer) flush() error {
 func (i *Indexer) index(ev *buffer.Event) error {
 	doc := *ev.Text
 	idx := indexName(i.indexPrefix)
-	typ := i.indexType
+	typ := ev.Type
+	if ev.Type == "" {
+		typ = i.indexType
+	}
 
 	request := elastic.NewBulkIndexRequest().Index(idx).Type(typ).Doc(doc)
+	if ev.ID != "" {
+		request.Id(ev.ID)
+	}
+
 	i.bulkService.Add(request)
 	i.RateCounter.Incr(1)
 

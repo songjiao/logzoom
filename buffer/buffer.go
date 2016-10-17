@@ -21,6 +21,8 @@ type Event struct {
 	Line   uint64  `json:"line,omitempty"`
 	Text   *string `json:"text,omitempty"`
 	Fields *map[string]interface{}
+	Type   string
+	ID     string
 }
 
 // subscriber is some host that wants to receive events
