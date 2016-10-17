@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	bufSize = 100
+	bufSize = 100000
 )
 
 type Sender interface {

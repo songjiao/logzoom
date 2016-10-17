@@ -20,13 +20,12 @@ import (
 const (
 	defaultHost = "127.0.0.1"
 	defaultIndexPrefix = "logstash"
-	esFlushInterval = 5
-	esMaxConns = 20
 )
 
 var (
-	esRecvBuffer = 100
-	esSendBuffer = 100
+	esRecvBuffer = 1000
+	esSendBuffer = 1000
+	esFlushInterval = 500
 )
 
 type Indexer struct {
@@ -45,8 +44,9 @@ type Config struct {
 	GzipEnabled     bool     `yaml:"gzip_enabled"`
 	InfoLogEnabled  bool     `yaml:"info_log_enabled"`
 	ErrorLogEnabled bool     `yaml:"error_log_enabled"`
-	ESRecvBuffer    int         `yaml:"es_resv_buffer"`
-	ESSendBuffer    int         `yaml:"es_send_buffer"`
+	ESRecvBuffer    int      `yaml:"es_resv_buffer"`
+	ESSendBuffer    int      `yaml:"es_send_buffer"`
+	ESFlushInterval int      `yaml:"es_flush_interval"`
 }
 
 type ESServer struct {
@@ -137,12 +137,16 @@ func (e *ESServer) ValidateConfig(config *Config) error {
 		return errors.New("Missing index type (e.g. logstash)")
 	}
 
-	if config.ESRecvBuffer > 0 {
+	if config.ESRecvBuffer > esRecvBuffer {
 		esRecvBuffer = config.ESRecvBuffer
 	}
 
-	if config.ESSendBuffer > 0 {
+	if config.ESSendBuffer > esSendBuffer {
 		esSendBuffer = config.ESSendBuffer
+	}
+
+	if config.ESFlushInterval > 0 {
+		esFlushInterval = config.ESFlushInterval
 	}
 
 	return nil
@@ -164,6 +168,10 @@ func (e *ESServer) Init(name string, config yaml.MapSlice, b buffer.Sender, rout
 	e.config = *esConfig
 	e.hosts = esConfig.Hosts
 	e.b = b
+
+	if err := e.ValidateConfig(esConfig); err != nil {
+		return fmt.Errorf("Error in config: %v", err)
+	}
 
 	return nil
 }
@@ -206,6 +214,7 @@ func (es *ESServer) insertIndexTemplate(client *elastic.Client) error {
 }
 
 func (es *ESServer) Start() error {
+
 	if (es.b == nil) {
 		log.Printf("[%s] No Route is specified for this output", es.name)
 		return nil
@@ -225,6 +234,9 @@ func (es *ESServer) Start() error {
 		log.Println("Setting GZIP enabled:", es.config.GzipEnabled)
 		log.Printf("es.config.hosts:[%s]", es.config.Hosts)
 		log.Printf("es.config.indexPrefix:%s", es.config.IndexPrefix)
+		log.Printf("es.recvBuffer:%d", es.config.ESRecvBuffer)
+		log.Printf("es.sendBuffer:%d", es.config.ESSendBuffer)
+		log.Printf("es.flushIntervel:%d ", es.config.ESFlushInterval)
 
 		httpClient.Timeout = timeout
 
@@ -264,6 +276,7 @@ func (es *ESServer) Start() error {
 	service := elastic.NewBulkService(client)
 
 	// Add the client as a subscriber
+	log.Printf("set receiveChan bufferSize:%d", esRecvBuffer)
 	receiveChan := make(chan *buffer.Event, esRecvBuffer)
 	es.b.AddSubscriber(es.host, receiveChan)
 	defer es.b.DelSubscriber(es.host)
@@ -274,7 +287,7 @@ func (es *ESServer) Start() error {
 	idx := &Indexer{service, es.config.IndexPrefix, es.config.IndexType, rateCounter, time.Now()}
 
 	// Loop events and publish to elasticsearch
-	tick := time.NewTicker(time.Duration(esFlushInterval) * time.Second)
+	tick := time.NewTicker(time.Duration(esFlushInterval) * time.Millisecond)
 
 	for {
 		readInputChannel(idx, receiveChan)

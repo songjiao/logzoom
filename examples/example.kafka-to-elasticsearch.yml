@@ -20,6 +20,7 @@ outputs:
         index_type: "nginxlog"
         es_resv_buffer: 10000
         es_send_buffer: 10000
+        es_flush_interval: 500
         gzip_enabled: false
         info_log_enabled: true
         error_log_enabled: true
