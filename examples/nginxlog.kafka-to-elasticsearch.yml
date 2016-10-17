@@ -1,0 +1,27 @@
+---
+inputs:
+  - kafka_nginxlog:
+      kafka:
+        zookeeper: "ka11.zw:2181,ka12.zw:2181,ka13.zw:2181,ka14.zw:2181,ka15.zw:2181"
+        topic: "nginx-monitor"
+        consumer_group: "logstash-nginx"
+outputs:
+  - es_nginxlog:
+      elasticsearch:
+        hosts:
+          - http://td-dz-rs31.yz:9201
+          - http://td-dz-rs32.yz:9201
+          - http://td-dz-rs33.yz:9201
+        index: "nginx"
+        index_type: "nginxlog"
+        es_resv_buffer: 10000
+        es_send_buffer: 10000
+        es_flush_interval: 500
+        gzip_enabled: false
+        info_log_enabled: true
+        error_log_enabled: true
+
+routes:
+  - route1:
+      input: kafka_nginxlog
+      output: es_nginxlog
